@@ -24,44 +24,75 @@
 
 using namespace std;
 
-int main(int, const char * argv[]) {
+struct preprocessor_data {
 	string input_filename, output_filename;
+};
 
+int process_args(const char *[], preprocessor_data *);
+int process_error(int, const char *[]);
+
+int main(int, const char * argv[]) {
+	preprocessor_data predata;
+	if(const int errc = process_args(argv, &predata)) {
+		const int retcode = process_error(errc, argv);
+		if(retcode >= 0)
+			return retcode;
+	}
+
+	cout << "Input: \"" << predata.input_filename << "\".\n"
+	        "Output: \"" << predata.output_filename << "\".";
+}
+
+int process_args(const char * argv[], preprocessor_data * predata) {
+	if(!argv[1])
+		return 1;
 	for(unsigned int idx = 1; argv[idx]; ++idx) {
 		const char * const arg = argv[idx];
 		const unsigned int arglen = strlen(arg);
 		if(*arg == '-' && arg[1]) {
 			if(arg[1] == 'o' && !arg[2]) {
-				if(!argv[++idx]) {
-					cerr << *argv << ": error: missing filename after \'-o\'\n";
-					return 1;
-				}
-				output_filename = argv[idx];
+				if(!argv[++idx])
+					return 2;
+				predata->output_filename = argv[idx];
 			} else if(arg[1] == 'o' && arg[2])
-				output_filename = arg + 2;
+				predata->output_filename = arg + 2;
 			else if(arglen >= 6 && !memcmp(arg, "--help", 6)) {
 				if(!arg[6])
-					cout << "Usage: " << *argv << " [options] file\n"
-					        "Options:\n"
-					        "  --help                   Display this information\n"
-					        "  -o <file>                Place the output into <file>\n"
-					        "\n"
-					        "For bug reporting, please contact:\n"
-					        "<nabijaczleweli@gmail.com>.\n";
-				return 0;
+					return 3;
 			}
 		} else
-			input_filename = arg;
+			predata->input_filename = arg;
 	}
 
-	if(!input_filename.size()) {
-		cerr << *argv << ": fatal error: no input files\n"
-		        "compilation terminated.\n";
+	if(!predata->input_filename.size())
 		return 1;
-	}
-	if(!output_filename.size())
-		output_filename = input_filename + ".ppc";
+	if(!predata->output_filename.size())
+		predata->output_filename = predata->input_filename + ".ppc";
 
-	cout << "Input: \"" << input_filename << "\".\n"
-	        "Output: \"" << output_filename << "\".";
+	return 0;
+}
+
+int process_error(int errc, const char * argv[]) {
+	switch(errc) {
+		case 1 :
+			cerr << *argv << ": fatal error: no input files\n"
+			        "preprocessing terminated.\n";
+			return 1;
+			break;
+		case 2 :
+			cerr << *argv << ": error: missing filename after \'-o\'\n";
+			return 1;
+			break;
+		case 3 :
+			cout << "Usage: " << *argv << " [options] file\n"
+			        "Options:\n"
+			        "  --help                   Display this information\n"
+			        "  -o <file>                Place the output into <file>\n"
+			        "\n"
+			        "For bug reporting, please contact:\n"
+			        "<nabijaczleweli@gmail.com>.\n";
+			return 0;
+			break;
+	}
+	return -1;
 }
