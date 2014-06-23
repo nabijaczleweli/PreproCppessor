@@ -23,7 +23,7 @@ include configMakefile
 
 .PHONY : clean all
 
-all : preprocessor_macro$(OBJ)
+all : preprocessor_macro$(OBJ) argument_processor$(OBJ)
 	$(CPP) $(CPPAR) -opreprocessor_macro$(EXE) $(filter %$(OBJ),$^)
 	$(STRIP) $(STRIPAR) preprocessor_macro$(EXE) -opreprocessor_macro$(EXE)
 

@@ -19,25 +19,21 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#pragma once
+
+#ifndef ARGUMENT_PROCESSOR_HPP
+#define ARGUMENT_PROCESSOR_HPP
+
 #include <iostream>
-#include <fstream>
 #include <cstring>
 
-#include "argument_processor.hpp"
+struct preprocessor_data {
+	std::string input_filename, output_filename;
+};
 
-using namespace std;
+int process_args(const char * argv[], preprocessor_data * predata);
+int process_error(int errc, const char * argv[]);
 
-int main(int, const char * argv[]) {
-	preprocessor_data predata;
-	if(const int errc = process_args(argv, &predata)) {
-		const int retcode = process_error(errc, argv);
-		if(retcode >= 0)
-			return retcode;
-	}
 
-	ifstream input_file(predata.input_filename);
-	if(!input_file) {
-		cerr << *argv << ": error: " << predata.input_filename << ": No such file or directory\n";
-		return 1;
-	}
-}
+#endif  // ARGUMENT_PROCESSOR_HPP
+
