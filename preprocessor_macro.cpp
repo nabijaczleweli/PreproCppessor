@@ -22,16 +22,19 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <unordered_map>
 
 #include "argument_processor.hpp"
 
 using namespace std;
 
+int process_preprocessing_directive(const string &);
+
 int main(int, const char * argv[]) {
 	preprocessor_data predata;
 	if(const int errc = process_args(argv, &predata)) {
-		const int retcode = process_error(errc, argv);
-		if(retcode >= 0)
+		const int retcode = process_args_error(errc, argv);
+		if(retcode != -1)
 			return retcode;
 	}
 
@@ -40,4 +43,32 @@ int main(int, const char * argv[]) {
 		cerr << *argv << ": error: " << predata.input_filename << ": No such file or directory\n";
 		return 1;
 	}
+
+	string line;
+	while(getline(input_file, line)) {
+		while(isspace(line.front()))
+			line = line.c_str() + 1;
+		if(line[0] == '#') {
+			if(!line.size())
+				continue;
+			while(isspace(line.front()))
+				line = line.c_str() + 1;
+			while(isspace(line.back()))
+				line.pop_back();
+			if(!line.size())
+				continue;
+			process_preprocessing_directive(line);
+		}
+	}
+}
+
+int process_preprocessing_directive(const string & pre_drecv) {
+	unordered_map<string, void (*)(const string &)> commands;
+	const char * endptr = pre_drecv.c_str();
+	while(*endptr && !isspace(*endptr))
+		++endptr;
+	cout << '\"' << string(pre_drecv.c_str(), endptr) << "\"\n";
+	//commands.find()
+
+	return 0;
 }

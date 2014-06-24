@@ -32,8 +32,7 @@ struct preprocessor_data {
 };
 
 int process_args(const char * argv[], preprocessor_data * predata);
-int process_error(int errc, const char * argv[]);
+int process_args_error(int errc, const char * argv[]);
 
 
 #endif  // ARGUMENT_PROCESSOR_HPP
-

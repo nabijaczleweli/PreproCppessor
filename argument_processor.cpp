@@ -52,7 +52,7 @@ int process_args(const char * argv[], preprocessor_data * predata) {
 	return 0;
 }
 
-int process_error(int errc, const char * argv[]) {
+int process_args_error(int errc, const char * argv[]) {
 	switch(errc) {
 		case 1 :
 			cerr << *argv << ": fatal error: no input files\n"
