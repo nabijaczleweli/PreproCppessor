@@ -29,6 +29,8 @@
 using namespace std;
 
 int process_preprocessing_directive(const string &);
+constexpr inline int isdrecvbreak(int);
+
 
 int main(int, const char * argv[]) {
 	preprocessor_data predata;
@@ -48,13 +50,17 @@ int main(int, const char * argv[]) {
 	while(getline(input_file, line)) {
 		while(isspace(line.front()))
 			line = line.c_str() + 1;
+		if(!line.size())
+			continue;
 		if(line[0] == '#') {
-			if(!line.size())
-				continue;
-			while(isspace(line.front()))
-				line = line.c_str() + 1;
+			line = line.c_str() + 1;
 			while(isspace(line.back()))
 				line.pop_back();
+			for(unsigned int i = 0; i < line.size(); ++i)
+				if(isspace(line[i]) && isspace(line[i + 1])) {
+					line = string(line.c_str(), i) + string(line.c_str() + i + 1);
+					--i;
+				}
 			if(!line.size())
 				continue;
 			process_preprocessing_directive(line);
@@ -62,13 +68,42 @@ int main(int, const char * argv[]) {
 	}
 }
 
-int process_preprocessing_directive(const string & pre_drecv) {
-	unordered_map<string, void (*)(const string &)> commands;
-	const char * endptr = pre_drecv.c_str();
-	while(*endptr && !isspace(*endptr))
-		++endptr;
-	cout << '\"' << string(pre_drecv.c_str(), endptr) << "\"\n";
-	//commands.find()
 
-	return 0;
+int process_preprocessing_directive(const string & pre_drecv) {
+	static unordered_map<string, pair<int (*)(const string &), void (*)(const int)>> commands =
+		{
+			{
+				"include",
+				{
+					[](const string &) {
+						return 0;
+					},
+					[](const int) {}
+				}
+			}, {
+				"define",
+				{
+					[](const string &) {return 0;},
+					[](const int) {}
+				}
+			}
+		};
+
+	const char * endptr = pre_drecv.c_str();
+	while(*endptr && !isdrecvbreak(*endptr))
+		++endptr;
+	if(endptr == pre_drecv.c_str())
+		return 0;
+	cout << '\"' << string(pre_drecv.c_str(), endptr) << "\"";
+	auto itr = commands.find(string(pre_drecv.c_str(), endptr));
+	if(itr == commands.end())
+		cerr << "VALUE NOT FOUND!\n";
+	else
+		cerr << "MEH FUND!\n";
+
+	return 1;
+}
+
+constexpr inline int isdrecvbreak(int ch) {
+	return !((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'));
 }

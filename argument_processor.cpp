@@ -27,13 +27,13 @@ int process_args(const char * argv[], preprocessor_data * predata) {
 	if(!argv[1])
 		return 1;
 	for(unsigned int idx = 1; argv[idx]; ++idx) {
-		const char * const arg = argv[idx];
+		const char * arg = argv[idx];
 		const unsigned int arglen = strlen(arg);
 		if(*arg == '-' && arg[1]) {
 			if(arg[1] == 'o' && !arg[2]) {
-				if(!argv[++idx])
+				if(!(arg = argv[++idx]))
 					return 2;
-				predata->output_filename = argv[idx];
+				predata->output_filename = arg;
 			} else if(arg[1] == 'o' && arg[2])
 				predata->output_filename = arg + 2;
 			else if(arglen >= 6 && !memcmp(arg, "--help", 6)) {
