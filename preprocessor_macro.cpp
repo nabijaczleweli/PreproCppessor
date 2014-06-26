@@ -23,14 +23,17 @@
 #include <fstream>
 #include <cstring>
 #include <unordered_map>
+#include <algorithm>
+#include <sstream>
 
 #include "argument_processor.hpp"
 
 using namespace std;
 
-int process_preprocessing_directive(const string &);
 constexpr inline int isdrecvbreak(int);
+string mulstr(const string &, unsigned long long int);
 
+unordered_map<string, string> defines;
 
 int main(int, const char * argv[]) {
 	preprocessor_data predata;
@@ -46,64 +49,72 @@ int main(int, const char * argv[]) {
 		return 1;
 	}
 
-	string line;
+	string line, fmtline, command;
+	unsigned long long int curline = 1,
+	                       curchar = 1;
 	while(getline(input_file, line)) {
-		while(isspace(line.front()))
-			line = line.c_str() + 1;
-		if(!line.size())
+		fmtline = line;
+		++curline;
+		curchar = 1;
+		while(isspace(fmtline.front())) {
+			fmtline = fmtline.c_str() + 1;
+			++curchar;
+		}
+		if(!fmtline.size())
 			continue;
-		if(line[0] == '#') {
-			line = line.c_str() + 1;
-			while(isspace(line.back()))
-				line.pop_back();
-			for(unsigned int i = 0; i < line.size(); ++i)
-				if(isspace(line[i]) && isspace(line[i + 1])) {
-					line = string(line.c_str(), i) + string(line.c_str() + i + 1);
-					--i;
+		if(fmtline[0] == '#') {
+			fmtline = fmtline.c_str() + 1;
+			++curchar;
+			while(isspace(fmtline.back()))
+				fmtline.pop_back();
+			command.erase();
+			for(const char & chr : fmtline) {
+				++curchar;
+				if(isdrecvbreak(chr))
+					break;
+				command.push_back(chr);
+			}
+			if(!command.size()) {
+				if(fmtline.size()) {
+					cerr << predata.input_filename << ':' << curline << ':' << curchar << ": error: invalid preprocessing directive " << fmtline << "\n " << line << "\n  ^\n";
+					return 1;
 				}
-			if(!line.size())
 				continue;
-			process_preprocessing_directive(line);
+			}
+			if(command == "define") {
+				string name, defined_value;
+				auto name_to_define_itr = find_if_not(fmtline.begin() + 6, fmtline.end(), isdrecvbreak);
+				if(name_to_define_itr == fmtline.end()) {
+					cerr << predata.input_filename << ':' << curline << ':' << line.size() + 1 << ": error: no macro name given in #define directive\n " << line << '\n' << mulstr(" ", line.size() + 1) << '^';
+					return 1;
+				} else {
+					auto name_to_define_end_itr = find_if(name_to_define_itr, fmtline.end(), isdrecvbreak);
+					string name_to_define(name_to_define_itr, name_to_define_end_itr);
+					auto value_to_define_itr = find_if_not(name_to_define_end_itr, fmtline.end(), isdrecvbreak);
+					if(value_to_define_itr == fmtline.end()) {
+						defines.emplace(string(name_to_define_itr, name_to_define_end_itr), "");
+						continue;
+					}
+					defines.emplace(string(name_to_define_itr, name_to_define_end_itr), string(value_to_define_itr, find_if(value_to_define_itr, fmtline.end(), isdrecvbreak)));
+					continue;
+				}
+			} else {
+				cerr << predata.input_filename << ':' << curline << ':' << curchar << ": error: invalid preprocessing directive " << fmtline << "\n " << line << "\n  ^\n";
+				return 1;
+			}
+			cout << command << '\n';
 		}
 	}
 }
 
 
-int process_preprocessing_directive(const string & pre_drecv) {
-	static unordered_map<string, pair<int (*)(const string &), void (*)(const int)>> commands =
-		{
-			{
-				"include",
-				{
-					[](const string &) {
-						return 0;
-					},
-					[](const int) {}
-				}
-			}, {
-				"define",
-				{
-					[](const string &) {return 0;},
-					[](const int) {}
-				}
-			}
-		};
-
-	const char * endptr = pre_drecv.c_str();
-	while(*endptr && !isdrecvbreak(*endptr))
-		++endptr;
-	if(endptr == pre_drecv.c_str())
-		return 0;
-	cout << '\"' << string(pre_drecv.c_str(), endptr) << "\"";
-	auto itr = commands.find(string(pre_drecv.c_str(), endptr));
-	if(itr == commands.end())
-		cerr << "VALUE NOT FOUND!\n";
-	else
-		cerr << "MEH FUND!\n";
-
-	return 1;
+constexpr inline int isdrecvbreak(int ch) {
+	return !(isalnum(ch) && !isdigit(ch));
 }
 
-constexpr inline int isdrecvbreak(int ch) {
-	return !((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'));
+string mulstr(const string & str, unsigned long long int amount) {
+	ostringstream ostr;
+	for(unsigned long long int i = 0; i < amount; ++i)
+		ostr << str;
+	return ostr.str();
 }

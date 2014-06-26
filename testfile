@@ -1,4 +1,11 @@
 
+#define a
+#define a b
+
+#improper
+
+#""
+
 #include <iostream>
 #include <fstream>
 #include <cstring>
@@ -6,7 +13,7 @@
 
 #include "argument_processor.hpp"
 
-#""
+#
 
 #include
 
