@@ -90,12 +90,17 @@ int main(int, const char * argv[]) {
 				} else {
 					auto name_to_define_end_itr = find_if(name_to_define_itr, fmtline.end(), isdrecvbreak);
 					string name_to_define(name_to_define_itr, name_to_define_end_itr);
-					auto value_to_define_itr = find_if_not(name_to_define_end_itr, fmtline.end(), isdrecvbreak);
+					auto value_to_define_itr = name_to_define_end_itr;
+					while(isspace(*value_to_define_itr))
+						++value_to_define_itr;
 					if(value_to_define_itr == fmtline.end()) {
 						defines.emplace(string(name_to_define_itr, name_to_define_end_itr), "");
 						continue;
 					}
-					defines.emplace(string(name_to_define_itr, name_to_define_end_itr), string(value_to_define_itr, find_if(value_to_define_itr, fmtline.end(), isdrecvbreak)));
+					string value_to_define(value_to_define_itr, fmtline.end());
+					while(isspace(value_to_define.back()))
+						value_to_define.pop_back();
+					defines.emplace(string(name_to_define_itr, name_to_define_end_itr), value_to_define);
 					continue;
 				}
 			} else {
@@ -105,6 +110,12 @@ int main(int, const char * argv[]) {
 			cout << command << '\n';
 		}
 	}
+
+	for(const auto & pr : defines)
+		if(!pr.second.size())
+			clog << "Defined " << pr.first << ".\n";
+		else
+			clog << "Defined " << pr.first << " for value " << pr.second << ".\n";
 }
 
 
