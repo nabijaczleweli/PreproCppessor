@@ -19,3 +19,6 @@
 *.exe
 *.out
 *.app
+
+# Our junk
+*.ppc

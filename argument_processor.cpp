@@ -50,7 +50,7 @@ int process_args(const char * argv[], preprocessor_data * predata, unordered_map
 					name_to_define = string(arg + 2, eq_sign_pos);
 					value_to_define = string(eq_sign_pos + 1);
 				}
-				if(defines.find(name_to_define) == defines.end())
+				if(defines.find(name_to_define) != defines.end())
 					cerr << "<command-line>:0:0: warning: " << name_to_define << " redefined [enabled by default]\n";
 				defines.emplace(name_to_define, value_to_define);
 			}

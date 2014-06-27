@@ -29,8 +29,8 @@
 
 using namespace std;
 
-constexpr inline int isdrecvbreak(int);
 string operator*(string, unsigned long long int);
+void print_line(const string &, ofstream &);
 
 unordered_map<string, string> defines;
 
@@ -43,6 +43,7 @@ int main(int, const char * argv[]) {
 	}
 
 	ifstream input_file(predata.input_filename);
+	ofstream output_file(predata.output_filename);
 	if(!input_file) {
 		cerr << *argv << ": error: " << predata.input_filename << ": No such file or directory\n";
 		return 1;
@@ -59,8 +60,10 @@ int main(int, const char * argv[]) {
 			fmtline = fmtline.c_str() + 1;
 			++curchar;
 		}
-		if(!fmtline.size())
+		if(!fmtline.size()) {
+			print_line(line, output_file);
 			continue;
+		}
 		if(fmtline[0] == '#') {
 			fmtline = fmtline.c_str() + 1;
 			++curchar;
@@ -69,7 +72,7 @@ int main(int, const char * argv[]) {
 			command.erase();
 			for(const char & chr : fmtline) {
 				++curchar;
-				if(isdrecvbreak(chr))
+				if(isalpha(chr))
 					break;
 				command.push_back(chr);
 			}
@@ -78,16 +81,17 @@ int main(int, const char * argv[]) {
 					cerr << predata.input_filename << ':' << curline << ':' << curchar << ": error: invalid preprocessing directive " << fmtline << "\n " << line << "\n  ^\n";
 					return 1;
 				}
+				print_line(line, output_file);
 				continue;
 			}
 			if(command == "define") {
 				string name, defined_value;
-				auto name_to_define_itr = find_if_not(fmtline.begin() + 6, fmtline.end(), isdrecvbreak);
+				auto name_to_define_itr = find_if_not(fmtline.begin() + 6, fmtline.end(), static_cast<int (*)(int)>(isalpha));
 				if(name_to_define_itr == fmtline.end()) {
 					cerr << predata.input_filename << ':' << curline << ':' << line.size() + 1 << ": error: no macro name given in #define directive\n " << line << '\n' << string(" ") * line.size() << " ^";
 					return 1;
 				} else {
-					auto name_to_define_end_itr = find_if(name_to_define_itr, fmtline.end(), isdrecvbreak);
+					auto name_to_define_end_itr = find_if(name_to_define_itr, fmtline.end(), static_cast<int (*)(int)>(isalpha));
 					string name_to_define(name_to_define_itr, name_to_define_end_itr);
 					if(defines.find(name_to_define) != defines.end()) {
 						cerr << predata.input_filename << ':' << curline << ":0: warning: \"" << name_to_define << "\" redefined [enabled by default]\n "<< line << "\n ^\n";
@@ -110,8 +114,8 @@ int main(int, const char * argv[]) {
 				cerr << predata.input_filename << ':' << curline << ':' << curchar << ": error: invalid preprocessing directive " << fmtline << "\n " << line << "\n  ^\n";
 				return 1;
 			}
-			cout << command << '\n';
 		}
+		print_line(line, output_file);
 	}
 
 	for(const auto & pr : defines)
@@ -119,13 +123,24 @@ int main(int, const char * argv[]) {
 }
 
 
-constexpr inline int isdrecvbreak(int ch) {
-	return !(isalnum(ch) && !isdigit(ch));
-}
-
 string operator*(string str, unsigned long long int times) {
 	stringstream strstrm;
 	for(unsigned long long int i = 0; i < times; ++i)
 		strstrm << str;
 	return strstrm.str();
+}
+
+void print_line(const string & _line, ofstream & output) {
+	if(defines.size()) {
+		string line = _line.c_str();
+		for(const auto & pr : defines) {
+			if(pr.first == pr.second)
+				continue;
+			size_t pos;
+			while((pos = line.find(pr.first)) != string::npos)
+				line.replace(pos, pr.first.size(), pr.second);  // TODO: make it isspace() aware!
+		}
+		output << line << '\n';
+	} else
+		output << _line << '\n';
 }
