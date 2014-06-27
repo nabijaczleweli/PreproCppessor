@@ -30,7 +30,7 @@
 using namespace std;
 
 constexpr inline int isdrecvbreak(int);
-string mulstr(const string &, unsigned long long int);
+string operator*(string, unsigned long long int);
 
 unordered_map<string, string> defines;
 
@@ -84,7 +84,7 @@ int main(int, const char * argv[]) {
 				string name, defined_value;
 				auto name_to_define_itr = find_if_not(fmtline.begin() + 6, fmtline.end(), isdrecvbreak);
 				if(name_to_define_itr == fmtline.end()) {
-					cerr << predata.input_filename << ':' << curline << ':' << line.size() + 1 << ": error: no macro name given in #define directive\n " << line << '\n' << mulstr(" ", line.size() + 1) << '^';
+					cerr << predata.input_filename << ':' << curline << ':' << line.size() + 1 << ": error: no macro name given in #define directive\n " << line << '\n' << string(" ") * line.size() << " ^";
 					return 1;
 				} else {
 					auto name_to_define_end_itr = find_if(name_to_define_itr, fmtline.end(), isdrecvbreak);
@@ -115,10 +115,7 @@ int main(int, const char * argv[]) {
 	}
 
 	for(const auto & pr : defines)
-		if(!pr.second.size())
-			clog << "Defined " << pr.first << ".\n";
-		else
-			clog << "Defined " << pr.first << " for value " << pr.second << ".\n";
+		clog << "Defined " << pr.first << (pr.second.size() ? " for value " + pr.second : "") << ".\n";
 }
 
 
@@ -126,9 +123,9 @@ constexpr inline int isdrecvbreak(int ch) {
 	return !(isalnum(ch) && !isdigit(ch));
 }
 
-string mulstr(const string & str, unsigned long long int amount) {
-	ostringstream ostr;
-	for(unsigned long long int i = 0; i < amount; ++i)
-		ostr << str;
-	return ostr.str();
+string operator*(string str, unsigned long long int times) {
+	stringstream strstrm;
+	for(unsigned long long int i = 0; i < times; ++i)
+		strstrm << str;
+	return strstrm.str();
 }
