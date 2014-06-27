@@ -65,17 +65,20 @@ int main(int, const char * argv[]) {
 			continue;
 		}
 		if(fmtline[0] == '#') {
-			fmtline = fmtline.c_str() + 1;
+			fmtline = fmtline.substr(1);
+			cout << fmtline << '\n';
 			++curchar;
 			while(isspace(fmtline.back()))
 				fmtline.pop_back();
+			cout << fmtline << '\n';
 			command.erase();
 			for(const char & chr : fmtline) {
 				++curchar;
-				if(isalpha(chr))
+				if(isspace(chr))
 					break;
 				command.push_back(chr);
 			}
+			cout << command << '\n';
 			if(!command.size()) {
 				if(fmtline.size()) {
 					cerr << predata.input_filename << ':' << curline << ':' << curchar << ": error: invalid preprocessing directive " << fmtline << "\n " << line << "\n  ^\n";
@@ -85,31 +88,29 @@ int main(int, const char * argv[]) {
 				continue;
 			}
 			if(command == "define") {
-				string name, defined_value;
-				auto name_to_define_itr = find_if_not(fmtline.begin() + 6, fmtline.end(), static_cast<int (*)(int)>(isalpha));
+				auto name_to_define_itr = find_if(fmtline.begin() + 6, fmtline.end(), static_cast<int (*)(int)>(isalpha));
 				if(name_to_define_itr == fmtline.end()) {
-					cerr << predata.input_filename << ':' << curline << ':' << line.size() + 1 << ": error: no macro name given in #define directive\n " << line << '\n' << string(" ") * line.size() << " ^";
+					cerr << predata.input_filename << ':' << curline << ':' << line.size() + 1 << ": error: no macro name given in #define directive\n"
+					        " " << line << '\n' <<
+					        string(" ") * line.size() << " ^";
 					return 1;
-				} else {
-					auto name_to_define_end_itr = find_if(name_to_define_itr, fmtline.end(), static_cast<int (*)(int)>(isalpha));
-					string name_to_define(name_to_define_itr, name_to_define_end_itr);
-					if(defines.find(name_to_define) != defines.end()) {
-						cerr << predata.input_filename << ':' << curline << ":0: warning: \"" << name_to_define << "\" redefined [enabled by default]\n "<< line << "\n ^\n";
-						continue;
-					}
-					auto value_to_define_itr = name_to_define_end_itr;
-					while(isspace(*value_to_define_itr))
-						++value_to_define_itr;
-					if(value_to_define_itr == fmtline.end()) {
-						defines.emplace(name_to_define, "");
-						continue;
-					}
-					string value_to_define(value_to_define_itr, fmtline.end());
-					while(isspace(value_to_define.back()))
-						value_to_define.pop_back();
-					defines.emplace(string(name_to_define_itr, name_to_define_end_itr), value_to_define);
+				}
+				auto name_to_define_end_itr = find_if_not(name_to_define_itr, fmtline.end(), static_cast<int (*)(int)>(isalpha));
+				string name_to_define(name_to_define_itr, name_to_define_end_itr);
+				if(defines.find(name_to_define) != defines.end()) {
+					cerr << predata.input_filename << ':' << curline << ":0: warning: \"" << name_to_define << "\" redefined [enabled by default]\n "<< line << "\n ^\n";
 					continue;
 				}
+				auto value_to_define_itr = find_if(name_to_define_end_itr, fmtline.end(), static_cast<int (*)(int)>(isalpha));;
+				if(value_to_define_itr == fmtline.end()) {
+					defines.emplace(name_to_define, "");
+					continue;
+				}
+				string value_to_define(value_to_define_itr, fmtline.end());
+				while(isspace(value_to_define.back()))
+					value_to_define.pop_back();
+				defines.emplace(string(name_to_define_itr, name_to_define_end_itr), value_to_define);
+				continue;
 			} else {
 				cerr << predata.input_filename << ':' << curline << ':' << curchar << ": error: invalid preprocessing directive " << fmtline << "\n " << line << "\n  ^\n";
 				return 1;
@@ -131,6 +132,10 @@ string operator*(string str, unsigned long long int times) {
 }
 
 void print_line(const string & _line, ofstream & output) {
+	if(!_line.size()) {
+		output << '\n';
+		return;
+	}
 	if(defines.size()) {
 		string line = _line.c_str();
 		for(const auto & pr : defines) {
