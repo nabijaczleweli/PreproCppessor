@@ -26,12 +26,13 @@
 
 #include <iostream>
 #include <cstring>
+#include <unordered_map>
 
 struct preprocessor_data {
 	std::string input_filename, output_filename;
 };
 
-int process_args(const char * argv[], preprocessor_data * predata);
+int process_args(const char * argv[], preprocessor_data * predata, std::unordered_map<std::string, std::string> &);
 int process_args_error(int errc, const char * argv[]);
 
 

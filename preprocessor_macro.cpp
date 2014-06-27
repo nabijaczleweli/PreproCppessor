@@ -22,7 +22,6 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
-#include <unordered_map>
 #include <algorithm>
 #include <sstream>
 
@@ -37,7 +36,7 @@ unordered_map<string, string> defines;
 
 int main(int, const char * argv[]) {
 	preprocessor_data predata;
-	if(const int errc = process_args(argv, &predata)) {
+	if(const int errc = process_args(argv, &predata, defines)) {
 		const int retcode = process_args_error(errc, argv);
 		if(retcode != -1)
 			return retcode;
@@ -90,11 +89,15 @@ int main(int, const char * argv[]) {
 				} else {
 					auto name_to_define_end_itr = find_if(name_to_define_itr, fmtline.end(), isdrecvbreak);
 					string name_to_define(name_to_define_itr, name_to_define_end_itr);
+					if(defines.find(name_to_define) != defines.end()) {
+						cerr << predata.input_filename << ':' << curline << ":0: warning: \"" << name_to_define << "\" redefined [enabled by default]\n "<< line << "\n ^\n";
+						continue;
+					}
 					auto value_to_define_itr = name_to_define_end_itr;
 					while(isspace(*value_to_define_itr))
 						++value_to_define_itr;
 					if(value_to_define_itr == fmtline.end()) {
-						defines.emplace(string(name_to_define_itr, name_to_define_end_itr), "");
+						defines.emplace(name_to_define, "");
 						continue;
 					}
 					string value_to_define(value_to_define_itr, fmtline.end());

@@ -23,7 +23,7 @@
 
 using namespace std;
 
-int process_args(const char * argv[], preprocessor_data * predata) {
+int process_args(const char * argv[], preprocessor_data * predata, unordered_map<string, string> & defines) {
 	if(!argv[1])
 		return 1;
 	for(unsigned int idx = 1; argv[idx]; ++idx) {
@@ -39,6 +39,18 @@ int process_args(const char * argv[], preprocessor_data * predata) {
 			else if(arglen >= 6 && !memcmp(arg, "--help", 6)) {
 				if(!arg[6])
 					return 3;
+			} else if(!memcmp(arg, "-D", 2)) {
+				if(!arg[2])
+					continue;
+				string name_to_define, value_to_define;
+				const char * eq_sign_pos = strchr(arg + 2, '=');
+				if(!eq_sign_pos)
+					name_to_define = string(arg + 2, arglen - 2);
+				else {
+					name_to_define = string(arg + 2, eq_sign_pos);
+					value_to_define = string(eq_sign_pos + 1);
+				}
+				defines.emplace(name_to_define, value_to_define);
 			}
 		} else
 			predata->input_filename = arg;
