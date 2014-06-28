@@ -29,7 +29,7 @@
 #include <unordered_map>
 
 struct preprocessor_data {
-	std::string input_filename, output_filename;
+	std::string input_filename, output_filename, program_name;
 };
 
 int process_args(const char * argv[], preprocessor_data * predata, std::unordered_map<std::string, std::string> &);

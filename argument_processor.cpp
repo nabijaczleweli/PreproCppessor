@@ -26,6 +26,7 @@ using namespace std;
 int process_args(const char * argv[], preprocessor_data * predata, unordered_map<string, string> & defines) {
 	if(!argv[1])
 		return 1;
+	predata->program_name = *argv;
 	for(unsigned int idx = 1; argv[idx]; ++idx) {
 		const char * arg = argv[idx];
 		const unsigned int arglen = strlen(arg);
