@@ -21,6 +21,8 @@
 
 include configMakefile
 
+PREPROCFILE = .ppc
+
 .PHONY : clean all
 
 all : preprocessor_macro$(OBJ) argument_processor$(OBJ)
@@ -28,7 +30,7 @@ all : preprocessor_macro$(OBJ) argument_processor$(OBJ)
 	$(STRIP) $(STRIPAR) preprocessor_macro$(EXE) -opreprocessor_macro$(EXE)
 
 clean :
-	rm -rf *$(OBJ) *$(EXE)
+	rm -rf *$(OBJ) *$(EXE) *$(PREPROCFILE)
 
 
 %$(OBJ) : %.cpp
