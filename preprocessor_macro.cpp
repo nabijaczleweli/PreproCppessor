@@ -24,6 +24,7 @@
 #include <cstring>
 #include <algorithm>
 #include <sstream>
+#include <iterator>
 
 #include "argument_processor.hpp"
 
@@ -54,18 +55,22 @@ int main(int, const char * argv[]) {
 		return errc;
 
 	for(const auto & pr : defines)
-		clog << "Defined " << pr.first << (" for value " + pr.second) * static_cast<bool>(pr.second.size()) << ".\n";
+		clog << "Defined " << pr.first << (" for value " + pr.second) * !!pr.second.size() << ".\n";
 }
 
+int asdffdasasdffdas = 0;
 
 int process_file(ostream & output_stream, istream & input_stream, const preprocessor_data & predata) {
 	string line, fmtline, command;
-	unsigned long long int curline = 1,
+	unsigned long long int curline = 0,
 	                       curchar = 1;
+	bool was_processing_command = false;
 	while(getline(input_stream, line)) {
-		fmtline = line;
-		++curline;
 		curchar = 1;
+		fmtline = line;
+		if(curline++ && !was_processing_command)
+			output_stream << '\n';
+		was_processing_command = false;
 		while(isspace(fmtline.front())) {
 			fmtline = fmtline.c_str() + 1;
 			++curchar;
@@ -75,6 +80,7 @@ int process_file(ostream & output_stream, istream & input_stream, const preproce
 			continue;
 		}
 		if(fmtline[0] == '#') {
+			was_processing_command = true;
 			fmtline = fmtline.substr(1);
 			++curchar;
 			while(isspace(fmtline.back()))
@@ -119,7 +125,6 @@ int process_file(ostream & output_stream, istream & input_stream, const preproce
 				defines.emplace(string(name_to_define_itr, name_to_define_end_itr), value_to_define);
 				continue;
 			} if(command == "include") {
-				bool islocal;
 				const char * islocal_itr = find_if_not(fmtline.c_str() + 7, fmtline.c_str() + fmtline.size(), static_cast<int (*)(int)>(isspace));
 				if(islocal_itr == fmtline.c_str() + fmtline.size() || !(*islocal_itr == '\"' || *islocal_itr == '<')) {
 					cerr << predata.input_filename << ':' << curline << ':' << line.find("include") + 7 << ": error: #include expects \"FILENAME\" or <FILENAME>\n"
@@ -127,32 +132,43 @@ int process_file(ostream & output_stream, istream & input_stream, const preproce
 					        string(" ") * (line.find("include") + 7) << " ^";
 					return 1;
 				}
-				islocal = *islocal_itr == '\"';
+				const bool islocal = *islocal_itr == '\"';
 				if(islocal_itr + 1 == (fmtline.c_str() + fmtline.size() - 1)) {
 					cerr << predata.input_filename << ':' << curline << ':' << (islocal_itr - fmtline.c_str() + 2) << ": error: empty filename in #include\n"
 					        " " << line << '\n' <<
 					        string(" ") * (islocal_itr - fmtline.c_str()) << "  ^";
 					return 1;
 				}
-				// TODO: end-bracket matching.
+				const char * filename_end_itr = find(islocal_itr + 1, fmtline.c_str() + fmtline.size(), islocal ? '\"' : '>');
+				if(filename_end_itr == fmtline.c_str() + fmtline.size()) {
+					cerr << predata.input_filename << ':' << curline << ':' << line.size() << ": error: missing terminating " << (islocal ? '\"' : '>') << " character\n"
+					        " " << line << '\n' <<
+					        string(" ") * line.size() << " ^";
+					return 1;
+				}
 				const char * filename_itr = islocal_itr + 1;
-				const char * filename_end_itr = filename_itr;
-				while(*filename_end_itr++ != (islocal ? '\"' : '>'))
-					++filename_end_itr;
 				string filename(filename_itr, filename_end_itr);
 				if(islocal) {
-					preprocessor_data newpredata;
-					newpredata.input_filename = filename;
-					newpredata.output_filename = predata.output_filename;
-					ifstream input_file(filename);
-					if(!input_file) {
-						cerr << predata.program_name << ": error: " << filename << ": No such file or directory\n";
-						return 1;
+					if(filename != predata.input_filename) {
+						preprocessor_data newpredata;
+						newpredata.input_filename = filename;
+						newpredata.output_filename = predata.output_filename;
+						ifstream input_file(filename);
+						if(!input_file) {
+							cerr << predata.program_name << ": error: " << filename << ": No such file or directory\n";
+							return 1;
+						}
+						if(const int errc = process_file(output_stream, input_file, newpredata))
+							return errc;
+					} else {
+						ifstream input_file(predata.input_filename);
+						if(const int errc = process_file(output_stream, input_file, predata))
+							return errc;
 					}
-					if(const int errc = process_file(output_stream, input_file, newpredata))
-						return errc;
 				} else
-					cout << "Non-local includes not yet supported!\n";
+					cout << "Non-local includes are not yet an option!\n";
+				continue;
+			} else if(command == "pragma") {
 				continue;
 			} else {
 				cerr << predata.input_filename << ':' << curline << ':' << curchar << ": error: invalid preprocessing directive " << fmtline << "\n " << line << "\n  ^\n";
@@ -184,10 +200,28 @@ void print_line(const string & _line, ostream & output) {
 			if(pr.first == pr.second)
 				continue;
 			size_t pos;
-			while((pos = line.find(pr.first)) != string::npos)
-				line.replace(pos, pr.first.size(), pr.second);  // TODO: make it isspace() aware!
+			vector<size_t> banned_indices;
+			while(pos != line.size() && (pos = line.find(pr.first)) != string::npos) {
+				while(find(banned_indices.begin(), banned_indices.end(), pos) != banned_indices.end() && pos != string::npos) {
+					size_t temp = line.substr(pos + 1).find(pr.first);
+					pos = (temp == string::npos) ? string::npos : temp + pos + 1;
+				}
+				if(pos == string::npos)
+					break;
+				if(pos)
+					if(!isspace(line[pos - 1])) {
+						banned_indices.push_back(pos);
+						continue;
+				}
+				if(pos + pr.first.size() != line.size())
+					if(!isspace(line[pos + pr.first.size()])) {
+						banned_indices.push_back(pos);
+						continue;
+					}
+				line.replace(pos, pr.first.size(), pr.second);
+			}
 		}
-		output << line << '\n';
+		output << line;
 	} else
-		output << _line << '\n';
+		output << _line;
 }

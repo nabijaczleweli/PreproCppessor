@@ -1,22 +1,37 @@
+DOLOR
+a
+asdf
+mooo
+llla
+lllaas
+moool
+asdfdd
+asdfde
 #include "replacefile"
+DOLOR
+#include "definesfile"
+a
+asdf
+mooo
+llla
+lllaas
+moool
+asdfdd
+asdfde
 //#include <>
 
 #define a
 #define a b
-
-#improper
-
-#""
 
 #include <iostream>
 #include <fstream>
 #include <cstring>
 #include <unordered_map>
 
-#include "argument_processor.hpp"
+//#include "preprocessor_macro.cpp"
 
 #
 
-#include
+//#include
 
 #define   LL LL        						                                                adsfasdfasdf
