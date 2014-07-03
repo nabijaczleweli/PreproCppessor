@@ -19,19 +19,9 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#pragma once
+#ifndef PREPROCESSOR_DATAFWD_HPP
+#define PREPROCESSOR_DATAFWD_HPP
 
-#ifndef ARGUMENT_PROCESSOR_HPP
-#define ARGUMENT_PROCESSOR_HPP
+struct preprocessor_data;
 
-#include <iostream>
-#include <cstring>
-#include <unordered_map>
-
-#include "preprocessor_datafwd.hpp"
-
-int process_args(const char * argv[], preprocessor_data * predata, std::unordered_map<std::string, std::string> &);
-int process_args_error(int errc, const char * argv[]);
-
-
-#endif  // ARGUMENT_PROCESSOR_HPP
+#endif  // PREPROCESSOR_DATAFWD_HPP
