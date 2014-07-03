@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iterator>
+#include <forward_list>
 
 #include "argument_processor.hpp"
 
@@ -35,6 +36,7 @@ void print_line(const string &, ostream &);
 int process_file(ostream &, istream &, const preprocessor_data &);
 
 unordered_map<string, string> defines;
+forward_list<string> pragma_once;
 
 int main(int, const char * argv[]) {
 	preprocessor_data predata;
@@ -57,8 +59,6 @@ int main(int, const char * argv[]) {
 	for(const auto & pr : defines)
 		clog << "Defined " << pr.first << (" for value " + pr.second) * !!pr.second.size() << ".\n";
 }
-
-int asdffdasasdffdas = 0;
 
 int process_file(ostream & output_stream, istream & input_stream, const preprocessor_data & predata) {
 	string line, fmtline, command;
@@ -148,6 +148,8 @@ int process_file(ostream & output_stream, istream & input_stream, const preproce
 				}
 				const char * filename_itr = islocal_itr + 1;
 				string filename(filename_itr, filename_end_itr);
+				if(find(pragma_once.begin(), pragma_once.end(), filename) != pragma_once.end())
+					continue;
 				if(islocal) {
 					if(filename != predata.input_filename) {
 						preprocessor_data newpredata;
@@ -169,6 +171,12 @@ int process_file(ostream & output_stream, istream & input_stream, const preproce
 					cout << "Non-local includes are not yet an option!\n";
 				continue;
 			} else if(command == "pragma") {
+				const char * const subcommand_itr = find_if_not(fmtline.c_str() + 7, fmtline.c_str() + fmtline.size(), static_cast<int (*)(int)>(isspace));
+				if(subcommand_itr != fmtline.c_str() + fmtline.size()) {
+					string subcommand(subcommand_itr, find_if(subcommand_itr, fmtline.c_str() + fmtline.size(), static_cast<int (*)(int)>(isspace)));
+					if(subcommand == "once")
+						pragma_once.emplace_front(predata.input_filename);
+				}
 				continue;
 			} else {
 				cerr << predata.input_filename << ':' << curline << ':' << curchar << ": error: invalid preprocessing directive " << fmtline << "\n " << line << "\n  ^\n";
