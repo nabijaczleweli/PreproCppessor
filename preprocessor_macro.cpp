@@ -24,7 +24,6 @@
 #include <cstring>
 #include <algorithm>
 #include <sstream>
-#include <iterator>
 #include <forward_list>
 
 #include "argument_processor.hpp"
@@ -174,9 +173,19 @@ int process_file(ostream & output_stream, istream & input_stream, const preproce
 			} else if(command == "pragma") {
 				const char * const subcommand_itr = find_if_not(fmtline.c_str() + 7, fmtline.c_str() + fmtline.size(), static_cast<int (*)(int)>(isspace));
 				if(subcommand_itr != fmtline.c_str() + fmtline.size()) {
-					string subcommand(subcommand_itr, find_if(subcommand_itr, fmtline.c_str() + fmtline.size(), static_cast<int (*)(int)>(isspace)));
+					const char * const subcommand_end_itr = find_if(subcommand_itr, fmtline.c_str() + fmtline.size(), static_cast<int (*)(int)>(isspace));
+					string subcommand(subcommand_itr, subcommand_end_itr);
 					if(subcommand == "once")
 						pragma_once.emplace_front(predata.input_filename);
+					else if(subcommand == "warning") {
+						string message(subcommand_end_itr + 1, fmtline.c_str() + fmtline.size());
+						cerr << predata.input_filename << ':' << curline << ':' << curchar << ": warning: " << message << ' ' << "\n " << line << "\n  ^\n";
+					}
+					else if(subcommand == "error") {
+						string message(subcommand_end_itr + 1, fmtline.c_str() + fmtline.size());
+						cerr << predata.input_filename << ':' << curline << ':' << curchar << ": error: " << message << ' ' << "\n " << line << "\n  ^\n";
+						return 1;
+					}
 				}
 				continue;
 			} else {
