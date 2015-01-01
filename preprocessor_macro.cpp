@@ -177,14 +177,11 @@ int process_file(ostream & output_stream, istream & input_stream, const preproce
 					string subcommand(subcommand_itr, subcommand_end_itr);
 					if(subcommand == "once")
 						pragma_once.emplace_front(predata.input_filename);
-					else if(subcommand == "warning") {
+					else if(subcommand == "message" || subcommand == "warning" || subcommand == "error")
 						string message(subcommand_end_itr + 1, fmtline.c_str() + fmtline.size());
-						cerr << predata.input_filename << ':' << curline << ':' << curchar << ": warning: " << message << ' ' << "\n " << line << "\n  ^\n";
-					}
-					else if(subcommand == "error") {
-						string message(subcommand_end_itr + 1, fmtline.c_str() + fmtline.size());
-						cerr << predata.input_filename << ':' << curline << ':' << curchar << ": error: " << message << ' ' << "\n " << line << "\n  ^\n";
-						return 1;
+						(subcommand == "message" ? cout : cerr) << predata.input_filename << ':' << curline << ':' << curchar << ": " + subcommand + ": " << message << ' ' << "\n " << line << "\n  ^\n";
+						if(subcommand == "error")
+							return 1;
 					}
 				}
 				continue;
