@@ -24,8 +24,12 @@
 #ifndef PREPROCESSOR_DATA_HPP
 #define PREPROCESSOR_DATA_HPP
 
+#include <string>
+#include <list>
+
 struct preprocessor_data {
 	std::string input_filename, output_filename, program_name;
+	std::list<std::string> system_directories;
 };
 
 #endif  // PREPROCESSOR_DATA_HPP

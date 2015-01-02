@@ -55,6 +55,24 @@ int process_args(const char * argv[], preprocessor_data * predata, unordered_map
 				if(defines.find(name_to_define) != defines.end())
 					cerr << "<command-line>:0:0: warning: " << name_to_define << " redefined [enabled by default]\n";
 				defines.emplace(name_to_define, value_to_define);
+			} else if(arglen > 11 && !memcmp(arg, "--sysroots=", 11)) {
+				if(!strchr(arg + 11, ';')) {
+					predata->system_directories.emplace_front(arg + 11, arg + arglen);
+					continue;
+				}
+				const char * semi_pointer = arg + 11;
+				try {
+					while(semi_pointer && semi_pointer < (arg + arglen)) {
+						const char * new_pos = strchr(semi_pointer, ';');
+						string(semi_pointer, new_pos); //  Without this everything crumbles if no ';' at the end
+						if(new_pos)
+							predata->system_directories.emplace_front(semi_pointer, new_pos);
+						semi_pointer = new_pos + 1;
+					}
+				} catch(length_error le) {
+					cerr << "<command-line>:0:0: info: please end your sysroots with \';\' [enabled by default]\n";
+					predata->system_directories.emplace_front(semi_pointer, arg + arglen);
+				}
 			}
 		} else
 			predata->input_filename = arg;

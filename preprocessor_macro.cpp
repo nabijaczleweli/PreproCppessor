@@ -58,6 +58,9 @@ int main(int, const char * argv[]) {
 
 	for(const auto & pr : defines)
 		clog << "Defined " << pr.first << (" for value " + pr.second) * !!pr.second.size() << ".\n";
+	clog << '\n';
+	for(const auto & dir : predata.system_directories)
+		clog << dir << '\n';
 }
 
 int process_file(ostream & output_stream, istream & input_stream, const preprocessor_data & predata) {
@@ -167,8 +170,9 @@ int process_file(ostream & output_stream, istream & input_stream, const preproce
 						if(const int errc = process_file(output_stream, input_file, predata))
 							return errc;
 					}
-				} else
-					cout << "Non-local includes are not yet an option!\n";
+				} else {
+
+				}
 				continue;
 			} else if(command == "pragma") {
 				const char * const subcommand_itr = find_if_not(fmtline.c_str() + 7, fmtline.c_str() + fmtline.size(), static_cast<int (*)(int)>(isspace));
@@ -177,7 +181,7 @@ int process_file(ostream & output_stream, istream & input_stream, const preproce
 					string subcommand(subcommand_itr, subcommand_end_itr);
 					if(subcommand == "once")
 						pragma_once.emplace_front(predata.input_filename);
-					else if(subcommand == "message" || subcommand == "warning" || subcommand == "error")
+					else if(subcommand == "message" || subcommand == "warning" || subcommand == "error") {
 						string message(subcommand_end_itr + 1, fmtline.c_str() + fmtline.size());
 						(subcommand == "message" ? cout : cerr) << predata.input_filename << ':' << curline << ':' << curchar << ": " + subcommand + ": " << message << ' ' << "\n " << line << "\n  ^\n";
 						if(subcommand == "error")
@@ -198,6 +202,8 @@ int process_file(ostream & output_stream, istream & input_stream, const preproce
 
 
 string operator*(string str, unsigned long long int times) {
+	if(!times)
+		return "";
 	stringstream strstrm;
 	for(unsigned long long int i = 0; i < times; ++i)
 		strstrm << str;
