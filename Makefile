@@ -33,5 +33,5 @@ clean :
 	rm -rf *$(OBJ) *$(EXE) *$(PREPROCFILE)
 
 
-%$(OBJ) : %.cpp
+%$(OBJ) : src/%.cpp
 	$(CPP) $(CPPAR) -c -o$@ $^
